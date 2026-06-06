@@ -409,61 +409,65 @@
            スマホ向けレスポンシブ（480px 以下）
         ============================================= */
         @media (max-width: 480px) {
-            /* ボディの余白を狭める */
             body {
                 border-width: 2px;
             }
 
             .screen {
-                padding: 16px;
-                gap: 14px;
+                padding: 12px;
+                gap: 12px;
             }
 
-            /* カードを小さくして3列が画面内に収まるように */
+            /* カード：3列が余裕を持って収まるサイズ */
             .card {
-                width: 90px;
-                height: 90px;
+                width: 75px;
+                height: 75px;
             }
 
             .card-grid {
-                grid-template-columns: repeat(3, 90px);
-                gap: 8px;
+                grid-template-columns: repeat(3, 75px);
+                gap: 6px;
             }
 
-            /* ステータスバーもコンパクトに */
+            /* ステータスバーをコンパクトに */
             .status-bar {
-                gap: 12px;
-                padding: 8px 14px;
+                gap: 8px;
+                padding: 7px 10px;
+            }
+
+            .status-item {
+                min-width: 48px;
             }
 
             .status-label {
-                font-size: 0.6rem;
+                font-size: 0.55rem;
             }
 
             .status-value {
-                font-size: 1.1rem;
+                font-size: 1rem;
             }
 
-            /* GAME OVER... を一行に収まるサイズに縮小 */
+            /* GAME OVER... を確実に一行に収まるサイズ */
             .gameover-title {
-                font-size: 2rem;
+                font-size: 1.6rem;
+                letter-spacing: 0.06em;
             }
 
             /* ゲームオーバー画像もスマホ幅に合わせる */
             .gameover-img {
-                width: 200px;
+                width: 180px;
             }
 
             /* スタートボタンも少し小さく */
             .btn-start {
-                width: 140px;
-                height: 140px;
-                font-size: 1.2rem;
+                width: 130px;
+                height: 130px;
+                font-size: 1.1rem;
             }
 
             /* チョコボタンの幅を画面内に収める */
             .btn-choco {
-                width: 220px;
+                width: 200px;
             }
         }
     </style>
