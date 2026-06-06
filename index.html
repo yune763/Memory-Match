@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神経衰弱ゲーム</title>
+    <!-- 丸みのある日本語フォント -->
+    <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
+    <style>
+        /* =============================================
+           リセット・ベース
+        ============================================= */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #000;
+            /* 丸みのある日本語フォント / オフライン時は游ゴシックなどにフォールバック */
+            font-family: 'Kosugi Maru', 'M PLUS Rounded 1c', 'Hiragino Maru Gothic Pro', 'Yu Gothic', sans-serif;
+            color: #fff;
+            border: 4px solid #000;
+        }
+
+        /* =============================================
+           各画面の共通スタイル
+           .active クラスが付いているときだけ表示
+        ============================================= */
+        .screen {
+            min-height: 100vh;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 28px;
+            padding: 24px;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* =============================================
+           スタート画面
+        ============================================= */
+        #screen-start {
+            background: #000 url('./images/スタート背景.png') center / cover no-repeat;
+        }
+
+        #screen-start h1 {
+            font-size: 2.6rem;
+            letter-spacing: 0.18em;
+            color: #fff;
+            text-shadow: 0 0 24px rgba(255,255,255,0.45), 2px 2px 8px rgba(0,0,0,0.9);
+        }
+
+        #screen-start p {
+            font-size: 0.95rem;
+            opacity: 0.7;
+            letter-spacing: 0.1em;
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.9);
+        }
+
+        /* 大きな円形スタートボタン */
+        .btn-start {
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.55);
+            background: radial-gradient(circle at 40% 35%,
+                rgba(255,255,255,0.22),
+                rgba(255,255,255,0.04));
+            backdrop-filter: blur(8px);
+            color: #fff;
+            font-family: inherit;
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 0.15em;
+            cursor: pointer;
+            box-shadow:
+                0 0 40px rgba(255,255,255,0.18),
+                inset 0 0 24px rgba(255,255,255,0.08);
+            transition: transform 0.25s, box-shadow 0.25s;
+            margin-top: 12px;
+        }
+
+        .btn-start:hover {
+            transform: scale(1.1);
+            box-shadow:
+                0 0 60px rgba(255,255,255,0.3),
+                inset 0 0 28px rgba(255,255,255,0.14);
+        }
+
+        .btn-start:active {
+            transform: scale(0.96);
+        }
+
+        /* =============================================
+           ゲーム画面
+        ============================================= */
+        #screen-game {
+            background: #000 url('./images/playing.JPG') center / cover no-repeat;
+            gap: 18px;
+            position: relative; /* クリアオーバーレイの基準 */
+        }
+
+        /* ステータスバー（タイム / ミス / ペア / 手数） */
+        .status-bar {
+            display: flex;
+            gap: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            padding: 10px 28px;
+            border-radius: 40px;
+            backdrop-filter: blur(8px);
+        }
+
+        .status-item {
+            text-align: center;
+            min-width: 64px;
+        }
+
+        .status-label {
+            font-size: 0.65rem;
+            letter-spacing: 0.1em;
+            opacity: 0.6;
+        }
+
+        .status-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            line-height: 1.3;
+        }
+
+        /* ミス残機ドット */
+        .life-dot {
+            display: inline-block;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            margin: 0 3px;
+            vertical-align: middle;
+        }
+        .life-dot.active { background: #ff4444; box-shadow: 0 0 6px rgba(255,68,68,0.7); }
+        .life-dot.lost   { background: #444; }
+
+        /* 残り時間が10秒以下になったら赤く点滅 */
+        .timer-warning {
+            color: #ff4444 !important;
+            animation: blink 0.7s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.25; }
+        }
+
+        /* =============================================
+           カードグリッド（3列 × 2行）
+        ============================================= */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 130px);
+            gap: 16px;
+        }
+
+        /* =============================================
+           カード外枠（パースペクティブ用）
+        ============================================= */
+        .card {
+            width: 130px;
+            height: 130px;  /* 正方形 */
+            perspective: 900px;
+            cursor: pointer;
+        }
+
+        /* =============================================
+           カード内部（3D フリップの軸）
+        ============================================= */
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 10px;
+        }
+
+        /* めくられた / マッチ済み → 180度回転して絵柄を表示 */
+        .card.flipped .card-inner,
+        .card.matched .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        /* 未めくりカードにホバーすると浮かぶ */
+        .card:not(.flipped):not(.matched):hover .card-inner {
+            transform: translateY(-5px);
+        }
+
+        /* =============================================
+           カードの面（裏・表 共通スタイル）
+        ============================================= */
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+        }
+
+        /* --- 裏面（カード背面画像）：初期状態で見える面 --- */
+        .card-back-face {
+            background: #e00;
+            border: 3px solid #a00;
+        }
+
+        .card-back-face img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* card_back.png が読めない場合の CSS フォールバック */
+        .card-back-fallback {
+            display: none;
+            width: 100%;
+            height: 100%;
+            background:
+                repeating-linear-gradient(
+                    45deg,
+                    rgba(255,255,255,0.1) 0px,
+                    rgba(255,255,255,0.1) 2px,
+                    transparent 2px,
+                    transparent 10px
+                ),
+                #e00;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.8rem;
+        }
+
+        /* --- 表面（絵柄画像）：めくると見える面 --- */
+        .card-front-face {
+            transform: rotateY(180deg);
+            background: #fff;
+            border: 3px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-front-face img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* 絵柄画像が読めないときの絵文字フォールバック */
+        .card-emoji-fallback {
+            display: none;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.2rem;
+            border-radius: 8px;
+        }
+
+        /* マッチ済みカードはゴールドで強調 */
+        .card.matched .card-front-face {
+            border-color: gold;
+            box-shadow: 0 0 18px rgba(255, 215, 0, 0.6);
+        }
+
+        .card.matched {
+            cursor: default;
+            pointer-events: none;
+        }
+
+        /* =============================================
+           ゲームクリア オーバーレイ（ゲーム画面上に重ねる）
+        ============================================= */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .overlay.visible {
+            display: flex;
+        }
+
+        .clear-box {
+            background: #000;
+            padding: 48px 64px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.4); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+
+        .clear-box h2 {
+            font-size: 2.4rem;
+            margin-bottom: 8px;
+        }
+
+        .clear-box p {
+            font-size: 1.05rem;
+            margin-bottom: 28px;
+            opacity: 0.9;
+            line-height: 1.8;
+        }
+
+
+        /* =============================================
+           ゲームオーバー画面
+        ============================================= */
+        #screen-gameover {
+            background: #fff;
+            gap: 16px;
+            color: #000;
+            padding-top: 80px;
+            justify-content: flex-start;
+        }
+
+        /* ゲームオーバー理由のサブテキスト（白背景用に色を上書き） */
+        #screen-gameover .gameover-reason {
+            color: rgba(0, 0, 0, 0.55);
+        }
+
+        /* gameover.JPG 中央配置 */
+        .gameover-img {
+            width: 260px;
+            height: auto;
+            display: block;
+        }
+
+        /* "GAME OVER..." の大きなテキスト：上から降ってくるアニメーション */
+        @keyframes dropIn {
+            0%   { transform: translateY(-140px); opacity: 0; }
+            60%  { transform: translateY(18px);   opacity: 1; }
+            80%  { transform: translateY(-7px); }
+            100% { transform: translateY(0); }
+        }
+
+        .gameover-title {
+            font-size: 3.2rem;
+            color: #222;
+            font-style: italic;
+            letter-spacing: 0.12em;
+            text-shadow: 2px 2px 8px rgba(180, 0, 0, 0.25);
+            margin-bottom: 4px;
+            animation: dropIn 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+        }
+
+        /* ゲームオーバー理由のサブテキスト */
+        .gameover-reason {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.55);
+            letter-spacing: 0.12em;
+        }
+
+        /* =============================================
+           チョコレート画像ボタン
+        ============================================= */
+        .btn-choco-wrap {
+            margin-top: 4px;
+        }
+
+        /* 画像そのものをボタンとして使用（透過を保持） */
+        .btn-choco {
+            display: block;
+            width: 280px;       /* 必要に応じてサイズ調整 */
+            height: auto;
+            background: transparent;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            transition: transform 0.15s, filter 0.15s;
+        }
+
+        .btn-choco:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.1);
+        }
+
+        .btn-choco:active {
+            transform: translateY(1px);
+            filter: brightness(0.9);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- =============================================
+         スタート画面
+    ============================================= -->
+    <div id="screen-start" class="screen active">
+        <h1>神経衰弱</h1>
+        <p>3種類のカードでペアを揃えよう</p>
+        <button class="btn-start" onclick="startGame()">START</button>
+    </div>
+
+    <!-- =============================================
+         ゲーム画面
+    ============================================= -->
+    <div id="screen-game" class="screen">
+
+        <!-- ステータスバー -->
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-label">タイム</div>
+                <div class="status-value" id="timer">1:00</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">ミス</div>
+                <div class="status-value" id="mistakes"></div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">ペア</div>
+                <div class="status-value" id="pairs">0 / 3</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">手数</div>
+                <div class="status-value" id="moves">0</div>
+            </div>
+        </div>
+
+        <!-- カードグリッド（JS で動的生成） -->
+        <div class="card-grid" id="cardGrid"></div>
+
+        <!-- ゲームクリア オーバーレイ -->
+        <div class="overlay" id="overlay">
+            <div class="clear-box">
+                <h2>ゲームクリア！</h2>
+                <p id="clearMessage"></p>
+                <img src="./images/チョコ2.png" class="btn-choco" onclick="goToStart()" alt="もういちど あそぶ" />
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================
+         ゲームオーバー画面
+    ============================================= -->
+    <div id="screen-gameover" class="screen">
+        <!-- 1. GAME OVER... テキスト -->
+        <p class="gameover-title">GAME OVER...</p>
+
+        <!-- 2. gameover.JPG 中央画像 -->
+        <img src="./images/gameover.JPG" class="gameover-img" alt="game over" />
+
+        <!-- 3. ゲームオーバー理由 -->
+        <p class="gameover-reason" id="gameover-reason"></p>
+
+        <!-- 4. チョコレート画像ボタン -->
+        <div class="btn-choco-wrap">
+            <img src="./images/チョコ2.png" class="btn-choco" onclick="goToStart()" alt="もういちど あそぶ" />
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // 定数・設定
+        // =============================================
+
+        const CARD_TYPES    = [1, 2, 3];
+        const CARD_IMAGES   = ['demon1.jpg', 'demon2.jpg', 'demon3.jpg'];
+        const MAX_MISTAKES  = 3;   // ミス許容回数
+        const TIME_LIMIT    = 60;  // 制限時間（秒）
+
+        // 画像読み込みエラー時のフォールバック（絵文字なし・番号で識別）
+        const FALLBACK = [
+            { label: '1', color: '#FF8FAB' },
+            { label: '2', color: '#FFE57F' },
+            { label: '3', color: '#FF7043' },
+        ];
+
+        // =============================================
+        // ゲーム状態
+        // =============================================
+        let cards        = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves        = 0;
+        let isLocked     = false;
+        let mistakeCount = 0;
+        let timeLeft     = TIME_LIMIT;
+        let timerHandle  = null;   // setInterval の ID（クリア用）
+
+        // =============================================
+        // 画面切り替え
+        // =============================================
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-' + id).classList.add('active');
+        }
+
+        // スタート画面に戻る（タイマーも止める）
+        function goToStart() {
+            stopTimer();
+            document.getElementById('overlay').classList.remove('visible');
+            showScreen('start');
+        }
+
+        // =============================================
+        // ゲーム開始（START ボタン押下時）
+        // =============================================
+        function startGame() {
+            showScreen('game');
+            initGame();
+            startTimer();
+        }
+
+        // =============================================
+        // ゲーム初期化（カードデータ生成・描画）
+        // =============================================
+        function initGame() {
+            const types = [...CARD_TYPES, ...CARD_TYPES];
+            shuffle(types);
+
+            cards = types.map((type, index) => ({
+                id: index,
+                type: type,
+                isFlipped: false,
+                isMatched: false,
+            }));
+
+            flippedCards = [];
+            matchedPairs = 0;
+            moves        = 0;
+            isLocked     = false;
+            mistakeCount = 0;
+
+            renderAllCards();
+            updateScoreboard();
+            updateMistakeDisplay();
+        }
+
+        // =============================================
+        // タイマー制御
+        // =============================================
+        function startTimer() {
+            timeLeft = TIME_LIMIT;
+            updateTimerDisplay();
+
+            timerHandle = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+
+                if (timeLeft <= 0) {
+                    stopTimer();
+                    triggerGameOver('timeout');
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerHandle);
+            timerHandle = null;
+        }
+
+        function updateTimerDisplay() {
+            const el   = document.getElementById('timer');
+            const mins = Math.floor(timeLeft / 60);
+            const secs = String(timeLeft % 60).padStart(2, '0');
+            el.textContent = `${mins}:${secs}`;
+            el.classList.toggle('timer-warning', timeLeft <= 10);
+        }
+
+        // =============================================
+        // ミス表示（CSS ドットで残り残機を表現）
+        // =============================================
+        function updateMistakeDisplay() {
+            const el = document.getElementById('mistakes');
+            let html = '';
+            for (let i = 0; i < MAX_MISTAKES; i++) {
+                const cls = i < (MAX_MISTAKES - mistakeCount) ? 'active' : 'lost';
+                html += `<span class="life-dot ${cls}"></span>`;
+            }
+            el.innerHTML = html;
+        }
+
+        // =============================================
+        // フィッシャー・イェーツ法でシャッフル
+        // =============================================
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+
+        // =============================================
+        // 全カードを DOM に描画
+        // =============================================
+        function renderAllCards() {
+            const grid = document.getElementById('cardGrid');
+            grid.innerHTML = '';
+            cards.forEach(card => grid.appendChild(buildCardElement(card)));
+        }
+
+        // =============================================
+        // カード DOM 要素を生成
+        // =============================================
+        function buildCardElement(card) {
+            const fb = FALLBACK[card.type - 1];
+
+            const el = document.createElement('div');
+            el.className = 'card';
+            el.id = `card-${card.id}`;
+            el.addEventListener('click', () => flipCard(card.id));
+
+            el.innerHTML = `
+                <div class="card-inner">
+
+                    <!-- 裏面：初期状態で表示 -->
+                    <div class="card-face card-back-face">
+                        <img
+                            src="./images/カード裏面.jpg"
+                            alt="カード裏面"
+                            onerror="
+                                this.style.display='none';
+                                this.nextElementSibling.style.display='flex';
+                            "
+                        />
+                        <div class="card-back-fallback"></div>
+                    </div>
+
+                    <!-- 表面：めくったときに表示 -->
+                    <div class="card-face card-front-face">
+                        <img
+                            src="./images/${CARD_IMAGES[card.type - 1]}"
+                            alt="demon${card.type}"
+                            onerror="
+                                this.style.display='none';
+                                this.nextElementSibling.style.display='flex';
+                            "
+                        />
+                        <div
+                            class="card-emoji-fallback"
+                            style="background:${fb.color};"
+                        >${fb.label}</div>
+                    </div>
+
+                </div>
+            `;
+
+            return el;
+        }
+
+        // =============================================
+        // カードの DOM クラスを状態に合わせて更新
+        // =============================================
+        function updateCardElement(card) {
+            const el = document.getElementById(`card-${card.id}`);
+            if (!el) return;
+            el.classList.toggle('flipped', card.isFlipped);
+            el.classList.toggle('matched', card.isMatched);
+        }
+
+        // =============================================
+        // カードをめくる（クリック時）
+        // =============================================
+        function flipCard(id) {
+            if (isLocked) return;
+
+            const card = cards[id];
+            if (card.isFlipped || card.isMatched) return;
+            if (flippedCards.length >= 2) return;
+
+            card.isFlipped = true;
+            flippedCards.push(card);
+            updateCardElement(card);
+
+            if (flippedCards.length === 2) {
+                moves++;
+                updateScoreboard();
+                checkMatch();
+            }
+        }
+
+        // =============================================
+        // マッチ判定
+        // =============================================
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+
+            if (card1.type === card2.type) {
+                // ペア成立
+                card1.isMatched = true;
+                card2.isMatched = true;
+                matchedPairs++;
+                flippedCards = [];
+
+                updateCardElement(card1);
+                updateCardElement(card2);
+                updateScoreboard();
+
+                if (matchedPairs === CARD_TYPES.length) {
+                    stopTimer();
+                    setTimeout(showClear, 400);
+                }
+
+            } else {
+                // ミスマッチ：0.8秒後に裏に戻す
+                isLocked = true;
+                mistakeCount++;
+                updateMistakeDisplay();
+
+                setTimeout(() => {
+                    card1.isFlipped = false;
+                    card2.isFlipped = false;
+                    flippedCards = [];
+
+                    updateCardElement(card1);
+                    updateCardElement(card2);
+
+                    if (mistakeCount >= MAX_MISTAKES) {
+                        // ミス上限 → ゲームオーバー
+                        setTimeout(() => triggerGameOver('mistakes'), 300);
+                    } else {
+                        isLocked = false;
+                    }
+                }, 800);
+            }
+        }
+
+        // =============================================
+        // スコアボード更新
+        // =============================================
+        function updateScoreboard() {
+            document.getElementById('moves').textContent = moves;
+            document.getElementById('pairs').textContent =
+                `${matchedPairs} / ${CARD_TYPES.length}`;
+        }
+
+        // =============================================
+        // ゲームクリア表示
+        // =============================================
+        function showClear() {
+            const mins = Math.floor(timeLeft / 60);
+            const secs = String(timeLeft % 60).padStart(2, '0');
+            document.getElementById('clearMessage').textContent =
+                `${moves} 手 ／ 残り時間 ${mins}:${secs} でクリア！`;
+            document.getElementById('overlay').classList.add('visible');
+        }
+
+        // =============================================
+        // ゲームオーバー処理
+        // reason: 'timeout'（時間切れ）| 'mistakes'（ミス上限）
+        // =============================================
+        function triggerGameOver(reason) {
+            stopTimer();
+            isLocked = true;
+
+            const reasonText = reason === 'timeout'
+                ? '時間切れ...'
+                : `${MAX_MISTAKES}回ミスしました...`;
+
+            document.getElementById('gameover-reason').textContent = reasonText;
+
+            setTimeout(() => {
+                showScreen('gameover');
+                // 2回目以降もアニメーションが再生されるようにリセット
+                const title = document.querySelector('.gameover-title');
+                title.style.animation = 'none';
+                title.offsetHeight; // reflow を強制して animation を再トリガー
+                title.style.animation = '';
+            }, 400);
+        }
+
+    </script>
+</body>
+</html>
