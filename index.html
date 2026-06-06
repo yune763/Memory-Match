@@ -327,6 +327,11 @@
             line-height: 1.8;
         }
 
+        /* クリア画面のボタンを中央揃え */
+        .clear-box .btn-choco {
+            margin: 0 auto;
+        }
+
 
         /* =============================================
            ゲームオーバー画面
@@ -462,6 +467,22 @@
             /* チョコボタンの幅を画面内に収める */
             .btn-choco {
                 width: 220px;
+            }
+
+            /* クリア画面のボックスをモバイルに合わせる */
+            .clear-box {
+                padding: 32px 28px;
+                width: 88vw;
+            }
+
+            /* ゲームクリアの文字を小さく */
+            .clear-box h2 {
+                font-size: 1.6rem;
+            }
+
+            .clear-box p {
+                font-size: 0.9rem;
+                margin-bottom: 20px;
             }
         }
     </style>
