@@ -303,11 +303,12 @@
 
         .clear-box {
             background: #000;
-            padding: 48px 64px;
+            padding: 48px 40px;
             border-radius: 20px;
             text-align: center;
             box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
             animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: min(480px, 90vw);
         }
 
         @keyframes popIn {
@@ -320,6 +321,8 @@
             margin-bottom: 8px;
             text-align: center;
             font-family: 'Dela Gothic One', sans-serif;
+            width: 100%;
+            word-break: break-word;
         }
 
         .clear-box p {
