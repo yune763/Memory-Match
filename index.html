@@ -418,56 +418,51 @@
                 gap: 12px;
             }
 
-            /* カード：3列が余裕を持って収まるサイズ */
+            /* カードを小さくして3列が画面内に収まるように */
             .card {
-                width: 75px;
-                height: 75px;
+                width: 90px;
+                height: 90px;
             }
 
             .card-grid {
-                grid-template-columns: repeat(3, 75px);
-                gap: 6px;
-            }
-
-            /* ステータスバーをコンパクトに */
-            .status-bar {
+                grid-template-columns: repeat(3, 90px);
                 gap: 8px;
-                padding: 7px 10px;
             }
 
-            .status-item {
-                min-width: 48px;
+            /* ステータスバーもコンパクトに */
+            .status-bar {
+                gap: 12px;
+                padding: 8px 14px;
             }
 
             .status-label {
-                font-size: 0.55rem;
+                font-size: 0.6rem;
             }
 
             .status-value {
-                font-size: 1rem;
+                font-size: 1.1rem;
             }
 
-            /* GAME OVER... を確実に一行に収まるサイズ */
+            /* GAME OVER... を一行に収まるサイズに縮小 */
             .gameover-title {
-                font-size: 1.6rem;
-                letter-spacing: 0.06em;
+                font-size: 2rem;
             }
 
             /* ゲームオーバー画像もスマホ幅に合わせる */
             .gameover-img {
-                width: 180px;
+                width: 200px;
             }
 
             /* スタートボタンも少し小さく */
             .btn-start {
-                width: 130px;
-                height: 130px;
-                font-size: 1.1rem;
+                width: 140px;
+                height: 140px;
+                font-size: 1.2rem;
             }
 
             /* チョコボタンの幅を画面内に収める */
             .btn-choco {
-                width: 200px;
+                width: 220px;
             }
         }
     </style>
