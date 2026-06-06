@@ -405,6 +405,67 @@
             filter: brightness(0.9);
         }
 
+        /* =============================================
+           スマホ向けレスポンシブ（480px 以下）
+        ============================================= */
+        @media (max-width: 480px) {
+            /* ボディの余白を狭める */
+            body {
+                border-width: 2px;
+            }
+
+            .screen {
+                padding: 16px;
+                gap: 14px;
+            }
+
+            /* カードを小さくして3列が画面内に収まるように */
+            .card {
+                width: 90px;
+                height: 90px;
+            }
+
+            .card-grid {
+                grid-template-columns: repeat(3, 90px);
+                gap: 8px;
+            }
+
+            /* ステータスバーもコンパクトに */
+            .status-bar {
+                gap: 12px;
+                padding: 8px 14px;
+            }
+
+            .status-label {
+                font-size: 0.6rem;
+            }
+
+            .status-value {
+                font-size: 1.1rem;
+            }
+
+            /* GAME OVER... を一行に収まるサイズに縮小 */
+            .gameover-title {
+                font-size: 2rem;
+            }
+
+            /* ゲームオーバー画像もスマホ幅に合わせる */
+            .gameover-img {
+                width: 200px;
+            }
+
+            /* スタートボタンも少し小さく */
+            .btn-start {
+                width: 140px;
+                height: 140px;
+                font-size: 1.2rem;
+            }
+
+            /* チョコボタンの幅を画面内に収める */
+            .btn-choco {
+                width: 220px;
+            }
+        }
     </style>
 </head>
 <body>
