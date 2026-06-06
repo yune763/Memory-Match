@@ -525,8 +525,7 @@
         <!-- ゲームクリア オーバーレイ -->
         <div class="overlay" id="overlay">
             <div class="clear-box">
-                <h2>ゲームクリア！</h2>
-                <p id="clearMessage"></p>
+                <h2>GAME CLAER！</h2>
                 <img src="./images/チョコ2.png" class="btn-choco" onclick="goToStart()" alt="もういちど あそぶ" />
             </div>
         </div>
@@ -830,10 +829,6 @@
         // ゲームクリア表示
         // =============================================
         function showClear() {
-            const mins = Math.floor(timeLeft / 60);
-            const secs = String(timeLeft % 60).padStart(2, '0');
-            document.getElementById('clearMessage').textContent =
-                `残り時間 ${mins}:${secs} でクリア！`;
             document.getElementById('overlay').classList.add('visible');
         }
 
