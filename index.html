@@ -335,8 +335,7 @@
             background: #fff;
             gap: 16px;
             color: #000;
-            padding-top: 80px;
-            justify-content: flex-start;
+            justify-content: center;
         }
 
         /* ゲームオーバー理由のサブテキスト（白背景用に色を上書き） */
@@ -418,14 +417,14 @@
                 gap: 12px;
             }
 
-            /* カードを小さくして3列が画面内に収まるように */
+            /* カードを3列が画面内に収まりつつ少し大きめに */
             .card {
-                width: 90px;
-                height: 90px;
+                width: 100px;
+                height: 100px;
             }
 
             .card-grid {
-                grid-template-columns: repeat(3, 90px);
+                grid-template-columns: repeat(3, 100px);
                 gap: 8px;
             }
 
@@ -492,14 +491,6 @@
             <div class="status-item">
                 <div class="status-label">ミス</div>
                 <div class="status-value" id="mistakes"></div>
-            </div>
-            <div class="status-item">
-                <div class="status-label">ペア</div>
-                <div class="status-value" id="pairs">0 / 3</div>
-            </div>
-            <div class="status-item">
-                <div class="status-label">手数</div>
-                <div class="status-value" id="moves">0</div>
             </div>
         </div>
 
@@ -803,13 +794,9 @@
         }
 
         // =============================================
-        // スコアボード更新
+        // スコアボード更新（手数・ペアは非表示のため何もしない）
         // =============================================
-        function updateScoreboard() {
-            document.getElementById('moves').textContent = moves;
-            document.getElementById('pairs').textContent =
-                `${matchedPairs} / ${CARD_TYPES.length}`;
-        }
+        function updateScoreboard() {}
 
         // =============================================
         // ゲームクリア表示
@@ -818,7 +805,7 @@
             const mins = Math.floor(timeLeft / 60);
             const secs = String(timeLeft % 60).padStart(2, '0');
             document.getElementById('clearMessage').textContent =
-                `${moves} 手 ／ 残り時間 ${mins}:${secs} でクリア！`;
+                `残り時間 ${mins}:${secs} でクリア！`;
             document.getElementById('overlay').classList.add('visible');
         }
 
