@@ -417,14 +417,14 @@
                 gap: 12px;
             }
 
-            /* カードを3列が画面内に収まりつつ少し大きめに */
+            /* カードを3列が画面内に収まりつつ大きめに */
             .card {
-                width: 100px;
-                height: 100px;
+                width: 110px;
+                height: 110px;
             }
 
             .card-grid {
-                grid-template-columns: repeat(3, 100px);
+                grid-template-columns: repeat(3, 110px);
                 gap: 8px;
             }
 
@@ -491,6 +491,10 @@
             <div class="status-item">
                 <div class="status-label">ミス</div>
                 <div class="status-value" id="mistakes"></div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">ペア</div>
+                <div class="status-value" id="pairs">0 / 3</div>
             </div>
         </div>
 
@@ -794,9 +798,12 @@
         }
 
         // =============================================
-        // スコアボード更新（手数・ペアは非表示のため何もしない）
+        // スコアボード更新
         // =============================================
-        function updateScoreboard() {}
+        function updateScoreboard() {
+            document.getElementById('pairs').textContent =
+                `${matchedPairs} / ${CARD_TYPES.length}`;
+        }
 
         // =============================================
         // ゲームクリア表示
